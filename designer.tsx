@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Download, Trash2, X, Sun, Moon, Palette } from "lucide-react";
+import { Download, Trash2, X, Sun, Moon, Palette, ZoomIn, ZoomOut } from "lucide-react";
 
 // Define widget types
 type WidgetType = 'label' | 'button' | 'slider' | 'checkbox' | 'image' | 'arc' | 'bar' | 'roller';
@@ -38,8 +38,10 @@ const LVGLWidgetDesigner: React.FC = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [yamlOutput, setYamlOutput] = useState('');
   const [showYamlModal, setShowYamlModal] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [darkMode, setDarkMode] = useState(true);
+  const [backgroundColor, setBackgroundColor] = useState('#1e293b');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
   
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -71,8 +73,8 @@ const LVGLWidgetDesigner: React.FC = () => {
     if (!canvasRef.current || !draggingWidget) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
 
     // Create new widget with default properties
     const newWidget: Widget = {
@@ -111,8 +113,8 @@ const LVGLWidgetDesigner: React.FC = () => {
     
     const rect = e.currentTarget.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) / zoomLevel,
+      y: (e.clientY - rect.top) / zoomLevel
     });
   };
 
@@ -121,8 +123,8 @@ const LVGLWidgetDesigner: React.FC = () => {
     if (!isDragging || !selectedWidget || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - dragOffset.x;
-    const y = e.clientY - rect.top - dragOffset.y;
+    const x = (e.clientX - rect.left) / zoomLevel - dragOffset.x;
+    const y = (e.clientY - rect.top) / zoomLevel - dragOffset.y;
     
     setWidgets(widgets.map(w => 
       w.id === selectedWidget.id 
@@ -247,6 +249,19 @@ const LVGLWidgetDesigner: React.FC = () => {
     setShowYamlModal(true);
   };
 
+  // Zoom functions
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.2, 3));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+  };
+
   // Render widget based on type
   const renderWidget = (widget: Widget) => {
     const isSelected = selectedWidget?.id === widget.id;
@@ -257,7 +272,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} flex items-center justify-center bg-white text-black border border-gray-300`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -272,7 +294,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} flex items-center justify-center bg-blue-500 text-white rounded`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -291,7 +320,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} flex items-center`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -319,7 +355,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} flex items-center justify-center bg-white border rounded`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -334,7 +377,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} flex items-center justify-center bg-gray-100`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -357,7 +407,9 @@ const LVGLWidgetDesigner: React.FC = () => {
               width: widget.width, 
               height: widget.height,
               borderTopColor: '#3b82f6',
-              borderRightColor: '#3b82f6'
+              borderRightColor: '#3b82f6',
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
             }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
@@ -371,7 +423,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} bg-gray-200 rounded`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -389,7 +448,14 @@ const LVGLWidgetDesigner: React.FC = () => {
         return (
           <div
             className={`${baseClasses} bg-white border border-gray-300 rounded flex items-center justify-center`}
-            style={{ left: widget.x, top: widget.y, width: widget.width, height: widget.height }}
+            style={{ 
+              left: widget.x, 
+              top: widget.y, 
+              width: widget.width, 
+              height: widget.height,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
             draggable
             onDragStart={(e) => handleWidgetDragStart(widget, e)}
             onDrag={handleWidgetDrag}
@@ -472,8 +538,39 @@ const LVGLWidgetDesigner: React.FC = () => {
                       value={backgroundColor}
                       onChange={(e) => setBackgroundColor(e.target.value)}
                       className={`flex-1 ${darkMode ? "bg-gray-700 border-gray-600" : ""}`}
-                      placeholder="#ffffff"
+                      placeholder="#1e293b"
                     />
+                  </div>
+                </div>
+                
+                {/* Zoom Controls */}
+                <div>
+                  <Label>Zoom Controls</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      onClick={zoomOut} 
+                      variant={darkMode ? "secondary" : "default"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={resetZoom} 
+                      variant={darkMode ? "secondary" : "default"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {Math.round(zoomLevel * 100)}%
+                    </Button>
+                    <Button 
+                      onClick={zoomIn} 
+                      variant={darkMode ? "secondary" : "default"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -649,7 +746,13 @@ const LVGLWidgetDesigner: React.FC = () => {
             <div 
               ref={canvasRef}
               className={`relative mx-auto shadow-lg ${canvasBgClass}`}
-              style={{ width: 320, height: 240, backgroundColor }}
+              style={{ 
+                width: 320 * zoomLevel, 
+                height: 240 * zoomLevel, 
+                backgroundColor,
+                transform: `scale(1)`,
+                transformOrigin: 'top left'
+              }}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => setSelectedWidget(null)}
@@ -687,6 +790,36 @@ const LVGLWidgetDesigner: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Welcome Modal */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${cardClass} rounded-lg shadow-xl w-full max-w-md`}>
+            <div className="flex justify-between items-center border-b p-4">
+              <h3 className="text-lg font-semibold">Welcome</h3>
+              <button 
+                onClick={() => setShowWelcomeModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="mb-4">
+                This tool is designed for use with an ESP32-2432S028R "Cheap Yellow Display", and Home Assistant. 
+                While it might work for other boards and display sizes, it is not recommended.
+              </p>
+              <Button 
+                onClick={() => setShowWelcomeModal(false)}
+                className="w-full"
+                variant={darkMode ? "secondary" : "default"}
+              >
+                Got it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* YAML Modal */}
       {showYamlModal && (
