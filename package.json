@@ -1,0 +1,4 @@
+"scripts": {
+  "build": "next build",          // Or your framework's build command
+  "start": "next start"           // Or "serve -s build" for CRA/Vite
+}
